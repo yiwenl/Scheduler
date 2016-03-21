@@ -114,9 +114,10 @@ class Scheduler {
 		this._usurpTask = [];
 	}
 
+
 	_loop() {
 		this._process();
-		window.requestAnimFrame(() => this._loop());
+		window.requestAnimationFrame(() => this._loop());
 	}
 }
 
