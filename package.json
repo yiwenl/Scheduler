@@ -1,6 +1,6 @@
 {
   "name": "scheduling",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "A enterframe tool",
   "main": "build/scheduler.js",
   "scripts": {
@@ -21,7 +21,7 @@
     "loop"
   ],
   "author": "Yi-Wen Lin",
-  "license": "ISC",
+  "license": "MIT",
   "bugs": {
     "url": "https://github.com/yiwenl/Scheduler/issues"
   },
