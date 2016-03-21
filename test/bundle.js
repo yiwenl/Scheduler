@@ -53,13 +53,13 @@
 
 	'use strict';
 
-	var _index = __webpack_require__(2);
+	var _scheduler = __webpack_require__(2);
 
-	var _index2 = _interopRequireDefault(_index);
+	var _scheduler2 = _interopRequireDefault(_scheduler);
 
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-	var index = _index2.default.addEF(loop); // main.js
+	var index = _scheduler2.default.addEF(loop); // main.js
 
 	var count = 0;
 
@@ -67,13 +67,13 @@
 		console.log('Loop', count);
 
 		if (count++ > 10) {
-			_index2.default.removeEF(index);
-			_index2.default.next(call, '00');
+			_scheduler2.default.removeEF(index);
+			_scheduler2.default.next(call, '00');
 		}
 	}
 
-	_index2.default.delay(call, '01', 500);
-	_index2.default.delay(call, '02', 1000);
+	_scheduler2.default.delay(call, '01', 500);
+	_scheduler2.default.delay(call, '02', 1000);
 
 	function call(str) {
 		console.log('Calling : ', str);
@@ -83,33 +83,17 @@
 /* 2 */
 /***/ function(module, exports, __webpack_require__) {
 
-	'use strict';
-
-	var _scheduler = __webpack_require__(3);
-
-	var _scheduler2 = _interopRequireDefault(_scheduler);
-
-	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-
-	module.exports = _scheduler2.default; // index.js
-
-	window.Scheduler = _scheduler2.default;
-
-/***/ },
-/* 3 */
-/***/ function(module, exports, __webpack_require__) {
-
 	"use strict";
 
 	Object.defineProperty(exports, "__esModule", {
 		value: true
 	});
 
-	var _classCallCheck2 = __webpack_require__(4);
+	var _classCallCheck2 = __webpack_require__(3);
 
 	var _classCallCheck3 = _interopRequireDefault(_classCallCheck2);
 
-	var _createClass2 = __webpack_require__(5);
+	var _createClass2 = __webpack_require__(4);
 
 	var _createClass3 = _interopRequireDefault(_createClass2);
 
@@ -242,7 +226,7 @@
 				var _this = this;
 
 				this._process();
-				window.requestAnimFrame(function () {
+				window.requestAnimationFrame(function () {
 					return _this._loop();
 				});
 			}
@@ -256,7 +240,7 @@
 	module.exports = exports['default'];
 
 /***/ },
-/* 4 */
+/* 3 */
 /***/ function(module, exports) {
 
 	"use strict";
@@ -270,14 +254,14 @@
 	};
 
 /***/ },
-/* 5 */
+/* 4 */
 /***/ function(module, exports, __webpack_require__) {
 
 	"use strict";
 
 	exports.__esModule = true;
 
-	var _defineProperty = __webpack_require__(6);
+	var _defineProperty = __webpack_require__(5);
 
 	var _defineProperty2 = _interopRequireDefault(_defineProperty);
 
@@ -302,22 +286,22 @@
 	})();
 
 /***/ },
+/* 5 */
+/***/ function(module, exports, __webpack_require__) {
+
+	module.exports = { "default": __webpack_require__(6), __esModule: true };
+
+/***/ },
 /* 6 */
 /***/ function(module, exports, __webpack_require__) {
 
-	module.exports = { "default": __webpack_require__(7), __esModule: true };
-
-/***/ },
-/* 7 */
-/***/ function(module, exports, __webpack_require__) {
-
-	var $ = __webpack_require__(8);
+	var $ = __webpack_require__(7);
 	module.exports = function defineProperty(it, key, desc){
 	  return $.setDesc(it, key, desc);
 	};
 
 /***/ },
-/* 8 */
+/* 7 */
 /***/ function(module, exports) {
 
 	var $Object = Object;

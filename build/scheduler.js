@@ -1,9 +1,20 @@
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+	value: true
+});
+
+var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
+
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
 // Scheduler.js
-const FRAMERATE = 60;
+var FRAMERATE = 60;
 
-class Scheduler {
+var Scheduler = function () {
+	function Scheduler() {
+		_classCallCheck(this, Scheduler);
 
-	constructor() {
 		this._delayTasks = [];
 		this._nextTasks = [];
 		this._deferTasks = [];
@@ -17,105 +28,122 @@ class Scheduler {
 
 	//  PUBLIC METHODS
 
-	addEF(func, params) {
-		params = params || [];
-		const id = this._idTable;
-		this._enterframeTasks[id] = { func, params };
-		this._idTable++;
-		return id;
-	}
-
-	removeEF(id) {
-		if (this._enterframeTasks[id] !== undefined) {
-			this._enterframeTasks[id] = null;
+	_createClass(Scheduler, [{
+		key: "addEF",
+		value: function addEF(func, params) {
+			params = params || [];
+			var id = this._idTable;
+			this._enterframeTasks[id] = { func: func, params: params };
+			this._idTable++;
+			return id;
 		}
-		return -1;
-	}
+	}, {
+		key: "removeEF",
+		value: function removeEF(id) {
+			if (this._enterframeTasks[id] !== undefined) {
+				this._enterframeTasks[id] = null;
+			}
+			return -1;
+		}
+	}, {
+		key: "delay",
+		value: function delay(func, params, _delay) {
+			var time = new Date().getTime();
+			var t = { func: func, params: params, delay: _delay, time: time };
+			this._delayTasks.push(t);
+		}
+	}, {
+		key: "defer",
+		value: function defer(func, params) {
+			var t = { func: func, params: params };
+			this._deferTasks.push(t);
+		}
+	}, {
+		key: "next",
+		value: function next(func, params) {
+			var t = { func: func, params: params };
+			this._nextTasks.push(t);
+		}
+	}, {
+		key: "usurp",
+		value: function usurp(func, params) {
+			var t = { func: func, params: params };
+			this._usurpTask.push(t);
+		}
 
-	delay(func, params, delay) {
-		const time = new Date().getTime();
-		const t = { func, params, delay, time };
-		this._delayTasks.push(t);
-	}
+		//  PRIVATE METHODS
 
-	defer(func, params) {
-		const t = { func, params };
-		this._deferTasks.push(t);
-	}
+	}, {
+		key: "_process",
+		value: function _process() {
+			var i = 0;
+			var task = void 0;
+			var interval = void 0;
+			var current = void 0;
+			for (i = 0; i < this._enterframeTasks.length; i++) {
+				task = this._enterframeTasks[i];
+				if (task !== null && task !== undefined) {
+					task.func(task.params);
+				}
+			}
 
-	next(func, params) {
-		const t = { func, params };
-		this._nextTasks.push(t);
-	}
-
-	usurp(func, params) {
-		const t = { func, params };
-		this._usurpTask.push(t);
-	}
-
-	//  PRIVATE METHODS
-
-	_process() {
-		let i = 0;
-		let task;
-		let interval;
-		let current;
-		for (i = 0; i < this._enterframeTasks.length; i++) {
-			task = this._enterframeTasks[i];
-			if (task !== null && task !== undefined) {
+			while (this._highTasks.length > 0) {
+				task = this._highTasks.pop();
 				task.func(task.params);
 			}
-		}
 
-		while (this._highTasks.length > 0) {
-			task = this._highTasks.pop();
-			task.func(task.params);
-		}
+			var startTime = new Date().getTime();
 
-		let startTime = new Date().getTime();
-
-		for (i = 0; i < this._delayTasks.length; i++) {
-			task = this._delayTasks[i];
-			if (startTime - task.time > task.delay) {
-				task.func(task.params);
-				this._delayTasks.splice(i, 1);
+			for (i = 0; i < this._delayTasks.length; i++) {
+				task = this._delayTasks[i];
+				if (startTime - task.time > task.delay) {
+					task.func(task.params);
+					this._delayTasks.splice(i, 1);
+				}
 			}
-		}
 
-		startTime = new Date().getTime();
-		interval = 1000 / FRAMERATE;
-		while (this._deferTasks.length > 0) {
-			task = this._deferTasks.shift();
-			current = new Date().getTime();
-			if (current - startTime < interval) {
-				task.func(task.params);
-			} else {
-				this._deferTasks.unshift(task);
-				break;
+			startTime = new Date().getTime();
+			interval = 1000 / FRAMERATE;
+			while (this._deferTasks.length > 0) {
+				task = this._deferTasks.shift();
+				current = new Date().getTime();
+				if (current - startTime < interval) {
+					task.func(task.params);
+				} else {
+					this._deferTasks.unshift(task);
+					break;
+				}
 			}
-		}
 
-		startTime = new Date().getTime();
-		interval = 1000 / FRAMERATE;
-		while (this._usurpTask.length > 0) {
-			task = this._usurpTask.shift();
-			current = new Date().getTime();
-			if (current - startTime < interval) {
-				task.func(task.params);
+			startTime = new Date().getTime();
+			interval = 1000 / FRAMERATE;
+			while (this._usurpTask.length > 0) {
+				task = this._usurpTask.shift();
+				current = new Date().getTime();
+				if (current - startTime < interval) {
+					task.func(task.params);
+				}
 			}
+
+			this._highTasks = this._highTasks.concat(this._nextTasks);
+			this._nextTasks = [];
+			this._usurpTask = [];
 		}
+	}, {
+		key: "_loop",
+		value: function _loop() {
+			var _this = this;
 
-		this._highTasks = this._highTasks.concat(this._nextTasks);
-		this._nextTasks = [];
-		this._usurpTask = [];
-	}
+			this._process();
+			window.requestAnimationFrame(function () {
+				return _this._loop();
+			});
+		}
+	}]);
 
-	_loop() {
-		this._process();
-		window.requestAnimFrame(() => this._loop());
-	}
-}
+	return Scheduler;
+}();
 
-const scheduler = new Scheduler();
+var scheduler = new Scheduler();
 
-export default scheduler;
+exports.default = scheduler;
