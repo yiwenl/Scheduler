@@ -1,15 +1,15 @@
 {
   "name": "scheduling",
-  "version": "1.0.5",
+  "version": "1.0.6",
   "description": "A enterframe tool",
   "main": "build/scheduler.js",
+  "module": "src/scheduler.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "lint": "eslint src",
     "lint:fix": "eslint --fix src",
     "start": "npm run dev",
     "dev": "webpack-dev-server --hot --inline --colors --error-details --content-base test/ ",
-    "build:lib": "webpack --progress --colors; babel src --out-dir build",
     "build": "NODE_ENV=production webpack --progress --colors --error-details"
   },
   "repository": {
