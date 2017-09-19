@@ -5,7 +5,7 @@ let index = Scheduler.addEF(loop);
 let count = 0;
 
 function loop() {
-	console.log('Loop', count);
+	console.log('Loop', count, Scheduler.deltaTime);
 
 	if(count ++ > 10) {
 		Scheduler.removeEF(index);

@@ -12,6 +12,10 @@ class Scheduler {
 		this._enterframeTasks = [];
 		this._idTable = 0;
 
+		this._startTime = new Date().getTime();
+
+		this._deltaTime = 0;
+
 		this._loop();
 	}
 
@@ -112,12 +116,18 @@ class Scheduler {
 		this._highTasks = this._highTasks.concat(this._nextTasks);
 		this._nextTasks = [];
 		this._usurpTask = [];
+
+		this._deltaTime = (startTime - this._startTime)/1000;
 	}
 
 
 	_loop() {
 		this._process();
 		window.requestAnimationFrame(() => this._loop());
+	}
+
+	get deltaTime() {
+		return this._deltaTime;
 	}
 }
 

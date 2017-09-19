@@ -23,6 +23,10 @@ var Scheduler = function () {
 		this._enterframeTasks = [];
 		this._idTable = 0;
 
+		this._startTime = new Date().getTime();
+
+		this._deltaTime = 0;
+
 		this._loop();
 	}
 
@@ -128,6 +132,8 @@ var Scheduler = function () {
 			this._highTasks = this._highTasks.concat(this._nextTasks);
 			this._nextTasks = [];
 			this._usurpTask = [];
+
+			this._deltaTime = (startTime - this._startTime) / 1000;
 		}
 	}, {
 		key: "_loop",
@@ -138,6 +144,11 @@ var Scheduler = function () {
 			window.requestAnimationFrame(function () {
 				return _this._loop();
 			});
+		}
+	}, {
+		key: "deltaTime",
+		get: function get() {
+			return this._deltaTime;
 		}
 	}]);
 
