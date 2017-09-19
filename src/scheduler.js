@@ -80,6 +80,7 @@ class Scheduler {
 
 
 		let startTime = new Date().getTime();
+		this._deltaTime = (startTime - this._startTime)/1000;
 
 		for (i = 0; i < this._delayTasks.length; i++) {
 			task = this._delayTasks[i];
@@ -90,6 +91,7 @@ class Scheduler {
 		}
 
 		startTime = new Date().getTime();
+		this._deltaTime = (startTime - this._startTime)/1000;
 		interval = 1000 / FRAMERATE;
 		while (this._deferTasks.length > 0) {
 			task = this._deferTasks.shift();
@@ -104,6 +106,7 @@ class Scheduler {
 
 
 		startTime = new Date().getTime();
+		this._deltaTime = (startTime - this._startTime)/1000;
 		interval = 1000 / FRAMERATE;
 		while (this._usurpTask.length > 0) {
 			task = this._usurpTask.shift();
@@ -116,8 +119,6 @@ class Scheduler {
 		this._highTasks = this._highTasks.concat(this._nextTasks);
 		this._nextTasks = [];
 		this._usurpTask = [];
-
-		this._deltaTime = (startTime - this._startTime)/1000;
 	}
 
 
