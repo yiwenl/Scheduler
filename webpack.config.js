@@ -1,66 +1,68 @@
-/* eslint comma-dangle: 0 */
-const webpack = require('webpack');
+// webpack.config.js
 const path = require('path');
-const prod = process.env.NODE_ENV === 'production';
+const webpack = require('webpack');
+
+const pathOutput = path.resolve(__dirname, 'dev');
+const pathBuild = path.resolve(__dirname, 'build');
+const env = process.env.NODE_ENV;
+const isProd = env === 'production';
 const libraryName = 'scheduler';
+console.log('Environment isProd :', isProd);
+
+const plugins = isProd ? 
+[	
+	new webpack.optimize.UglifyJsPlugin({
+		sourceMap:false,
+		compress: {
+			drop_debugger: true,
+			drop_console: true,
+			screw_ie8: true
+		},
+		comments:false,
+		mangle:false
+	})
+] : [
+	new webpack.HotModuleReplacementPlugin()
+];
 
 
-const output = prod ? 
-{
-	path: path.resolve(__dirname, "build"),
-	filename: `./${libraryName}.js`,
-	library: libraryName,
-	libraryTarget: 'umd',
-	umdNamedDefine: true
-} : 
-{
-	path: path.resolve(__dirname, "test"),
-	publicPath: 'http://localhost:8080/',
-	filename: 'bundle.js'
-}
+const entry = isProd ? {app:'./src/scheduler.js'}
+				: {app:'./dev/main.js'};
+const output = isProd ? {
+		path: pathBuild,
+		filename: `./${libraryName}.js`,
+		library: libraryName,
+		libraryTarget: 'umd',
+		umdNamedDefine: true
+	} : {
+		filename:'bundle.js',
+		path: pathOutput
+	};
 
-function getEntrySources() {
-	if (!prod) {
-		return ['./test/main.js']
-	}
-	return ['./src/scheduler.js'];
-}
+const devtool = 'source-map';
 
-module.exports = {
-	entry: {
-		app: getEntrySources()
+const config = {
+	entry,
+	devtool,
+	devServer: {
+		host:'0.0.0.0',
+		contentBase: './dev',
+		hot:true,
+		disableHostCheck:true
 	},
-	stats: {
-		cached: false,
-		cachedAssets: false,
-		chunkModules: false,
-		chunks: false,
-		colors: true,
-		errorDetails: true,
-		hash: false,
-		progress: true,
-		reasons: false,
-		timings: true,
-		version: false
-	},
+	plugins,
 	output,
 	module: {
-		loaders: [{
-			test: /\.js$/,
-			loader: 'babel',
-			exclude: /node_modules/,
-			query: {
-				plugins: ['transform-runtime', 'add-module-exports'],
-				presets: ['es2015', 'stage-1']
+		rules: [
+			{
+				test: /\.js$/,
+				loader: 'babel-loader',
+				query: {
+					presets: ['env']
+				}
 			}
-		}]
-	},
-	plugins: prod ? [
-		new webpack.optimize.UglifyJsPlugin({
-			compress: {
-				screw_ie8: true,
-				warnings: false
-			}
-		})
-	] : []
-};
+		]
+	}
+}
+
+module.exports = config;

@@ -1,5 +1,6 @@
 // main.js
-import Scheduler from '../src/scheduler';
+// import Scheduler from '../src/scheduler';
+import Scheduler from '../build/scheduler';
 
 let index = Scheduler.addEF(loop);
 let count = 0;
