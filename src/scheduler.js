@@ -1,5 +1,5 @@
 // Scheduler.js
-const FRAMERATE = 60;
+
 
 class Scheduler {
 
@@ -11,7 +11,7 @@ class Scheduler {
 		this._usurpTask = [];
 		this._enterframeTasks = [];
 		this._idTable = 0;
-
+		this.frameRate = 60;
 		this._startTime = new Date().getTime();
 
 		this._deltaTime = 0;
@@ -92,7 +92,7 @@ class Scheduler {
 
 		startTime = new Date().getTime();
 		this._deltaTime = (startTime - this._startTime)/1000;
-		interval = 1000 / FRAMERATE;
+		interval = 1000 / this.frameRate;
 		while (this._deferTasks.length > 0) {
 			task = this._deferTasks.shift();
 			current = new Date().getTime();
@@ -107,7 +107,7 @@ class Scheduler {
 
 		startTime = new Date().getTime();
 		this._deltaTime = (startTime - this._startTime)/1000;
-		interval = 1000 / FRAMERATE;
+		interval = 1000 / this.frameRate;
 		while (this._usurpTask.length > 0) {
 			task = this._usurpTask.shift();
 			current = new Date().getTime();
