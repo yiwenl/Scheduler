@@ -1,137 +1,235 @@
-// Scheduler.js
+// animation frame source
+let afSource = window;
 
+// expected frame rate, for defer / usurp tasks
+let frameRate = 60;
 
-class Scheduler {
+// time
+let startTime = performance.now();
+let deltaTime = 0;
+let elapsedTime = 0;
+let prevTime = startTime;
 
-	constructor() {
-		this._delayTasks = [];
-		this._nextTasks = [];
-		this._deferTasks = [];
-		this._highTasks = [];
-		this._usurpTask = [];
-		this._enterframeTasks = [];
-		this._idTable = 0;
-		this.frameRate = 60;
-		this._startTime = new Date().getTime();
+// tasks
+const enterframeTasks = [];
+const delayTasks = [];
+const deferTasks = [];
+const usurpTasks = [];
+let highTasks = [];
+let nextTasks = [];
 
-		this._deltaTime = 0;
+// indexing
+let idTable = 0;
 
-		this._loop();
-	}
+/**
+ * Add an enterframe task
+ *
+ * @param {function} mFunc the function to be called in enterframe
+ * @param {object} mArgs the arguments for the function
+ * @returns {number} the id of the task
+ */
+function addEF(mFunc, mArgs) {
+  const id = ++idTable;
 
-
-	//  PUBLIC METHODS
-
-	addEF(func, params) {
-		params = params || [];
-		const id = this._idTable;
-		this._enterframeTasks[id] = { func, params };
-		this._idTable ++;
-		return id;
-	}
-
-	removeEF(id) {
-		if (this._enterframeTasks[id] !== undefined) {
-			this._enterframeTasks[id] = null;
-		}
-		return -1;
-	}
-
-	delay(func, params, delay) {
-		const time = new Date().getTime();
-		const t = { func, params, delay, time };
-		this._delayTasks.push(t);
-	}
-
-	defer(func, params) {
-		const t = { func, params };
-		this._deferTasks.push(t);
-	}
-
-	next(func, params) {
-		const t = { func, params };
-		this._nextTasks.push(t);
-	}
-
-	usurp(func, params) {
-		const t = { func, params };
-		this._usurpTask.push(t);
-	}
-
-
-	//  PRIVATE METHODS
-
-	_process() {
-		let i = 0;
-		let task;
-		let interval;
-		let current;
-		for (i = 0; i < this._enterframeTasks.length; i++) {
-			task = this._enterframeTasks[i];
-			if (task !== null && task !== undefined) {
-				task.func(task.params);
-			}
-		}
-
-		while (this._highTasks.length > 0) {
-			task = this._highTasks.pop();
-			task.func(task.params);
-		}
-
-
-		let startTime = new Date().getTime();
-		this._deltaTime = (startTime - this._startTime)/1000;
-
-		for (i = 0; i < this._delayTasks.length; i++) {
-			task = this._delayTasks[i];
-			if (startTime - task.time > task.delay) {
-				task.func(task.params);
-				this._delayTasks.splice(i, 1);
-			}
-		}
-
-		startTime = new Date().getTime();
-		this._deltaTime = (startTime - this._startTime)/1000;
-		interval = 1000 / this.frameRate;
-		while (this._deferTasks.length > 0) {
-			task = this._deferTasks.shift();
-			current = new Date().getTime();
-			if (current - startTime < interval) {
-				task.func(task.params);
-			} else {
-				this._deferTasks.unshift(task);
-				break;
-			}
-		}
-
-
-		startTime = new Date().getTime();
-		this._deltaTime = (startTime - this._startTime)/1000;
-		interval = 1000 / this.frameRate;
-		while (this._usurpTask.length > 0) {
-			task = this._usurpTask.shift();
-			current = new Date().getTime();
-			if (current - startTime < interval) {
-				task.func(task.params);
-			}
-		}
-
-		this._highTasks = this._highTasks.concat(this._nextTasks);
-		this._nextTasks = [];
-		this._usurpTask = [];
-	}
-
-
-	_loop() {
-		this._process();
-		window.requestAnimationFrame(() => this._loop());
-	}
-
-	get deltaTime() {
-		return this._deltaTime;
-	}
+  console.log("add task", id);
+  enterframeTasks[id] = { func: mFunc, args: mArgs };
+  return id;
 }
 
-const scheduler = new Scheduler();
+/**
+ * Remove an enterframe task
+ *
+ * @param {number} mIndex the id of the task to be removed
+ * @returns {number} return -1
+ */
+function removeEF(mIndex) {
+  if (enterframeTasks[mIndex] !== undefined) {
+    enterframeTasks[mIndex] = null;
+  }
+  return -1;
+}
 
-export default scheduler;
+/**
+ * Add a delayed task
+ *
+ * @param {function} mFunc the function to be called
+ * @param {object} mArgs the arguments for the function
+ * @param {number} mDelay the delay time for the task
+ * @returns {number} the id of the task
+ */
+function delay(mFunc, mArgs, mDelay) {
+  const time = performance.now();
+  delayTasks.push({ func: mFunc, args: mArgs, delay: mDelay, time });
+}
+
+/**
+ * Add a task for next frame
+ *
+ * @param {function} mFunc the function to be called
+ * @param {object} mArgs the arguments for the function
+ * @returns {number} the id of the task
+ */
+function next(mFunc, mArgs) {
+  nextTasks.push({ func: mFunc, args: mArgs });
+}
+
+/**
+ * Add a deffered task that only execute when there's enough time left in the frame.
+ * Otherwise try again in the next frame ( Green threading )
+ *
+ * @param {function} mFunc the function to be called
+ * @param {object} mArgs the arguments for the function
+ * @returns {number} the id of the task
+ */
+function defer(mFunc, mArgs) {
+  deferTasks.push({ func: mFunc, args: mArgs });
+}
+
+/**
+ * Add an usurp task, that only execute when there's enough time left in the frame, otherwise abandoned.
+ *
+ * @param {function} mFunc the function to be called
+ * @param {object} mArgs the arguments for the function
+ * @returns {number} the id of the task
+ */
+function usurp(mFunc, mArgs) {
+  usurpTasks.push({ func: mFunc, args: mArgs });
+}
+
+/**
+ * Get the delta time from last frame
+ *
+ * @returns {number} the elapsed time from the last frame
+ */
+function getDeltaTime() {
+  return deltaTime;
+}
+
+/**
+ * Get the elapsed time from the app starts
+ *
+ * @returns {number} the elapsed tiem of the app ( in sec )
+ */
+function getElapsedTime() {
+  return elapsedTime;
+}
+
+/**
+ * Set the animation source of the scheduler
+ *
+ * @param {object} mSource the source of animation frame, e.g. window or XR
+ */
+function setRequestAnimationFrameSource(mSource) {
+  afSource = mSource;
+}
+
+/**
+ * Set the (expected) frame rate for defer / usurp tasks
+ *
+ * @param {number} mFrameRate the frame rate
+ */
+function setFrameRate(mFrameRate) {
+  frameRate = mFrameRate;
+}
+
+/**
+ * Process all scheduled tasks
+ */
+function process() {
+  let i = 0;
+  let task;
+  let interval = 1000 / frameRate;
+  let current = 0;
+
+  // enterframe tasks
+  for (i = 0; i < enterframeTasks.length; i++) {
+    task = enterframeTasks[i];
+    if (task !== null && task !== undefined) {
+      task.func(task.args);
+    }
+  }
+
+  // high priority tasks
+  while (highTasks.length > 0) {
+    task = highTasks.pop();
+    task.func(task.args);
+  }
+
+  // get current time
+  let currentTime = performance.now();
+  elapsedTime = (currentTime - startTime) / 1000;
+  deltaTime = currentTime - prevTime;
+
+  // delay tasks
+  for (i = 0; i < delayTasks.length; i++) {
+    task = delayTasks[i];
+    if (currentTime - task.time > task.delay) {
+      task.func(task.args);
+      delayTasks.splice(i, 1);
+    }
+  }
+
+  // defer tasks
+  currentTime = performance.now();
+  while (deferTasks.length > 0) {
+    task = deferTasks.shift();
+    current = performance.now();
+    console.log(
+      "Defer :",
+      current,
+      currentTime,
+      task.args.name,
+      task.args.target
+    );
+    if (current - currentTime < interval) {
+      task.func(task.args);
+    } else {
+      console.log("not enough time, push to next frame", task.args.name);
+      deferTasks.unshift(task);
+      break;
+    }
+  }
+
+  // usurp tasks
+  currentTime = performance.now();
+  while (usurpTasks.length > 0) {
+    task = usurpTasks.shift();
+    current = performance.now();
+    if (current - currentTime < interval) {
+      task.func(task.args);
+    }
+    // else do nothing, tasks abandoned
+  }
+
+  // save time
+  prevTime = currentTime;
+
+  // clear tasks
+  highTasks = highTasks.concat(nextTasks);
+  nextTasks = [];
+}
+
+/**
+ * Looping
+ */
+function loop() {
+  process();
+  afSource.requestAnimationFrame(loop);
+}
+
+// start the engine
+loop();
+
+// exports
+export default {
+  addEF,
+  removeEF,
+  delay,
+  next,
+  defer,
+  usurp,
+  setRequestAnimationFrameSource,
+  setFrameRate,
+  getElapsedTime,
+  getDeltaTime,
+};

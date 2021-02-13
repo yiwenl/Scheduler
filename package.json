@@ -1,16 +1,14 @@
 {
   "name": "scheduling",
-  "version": "1.1.1",
+  "version": "1.2.0",
   "description": "A enterframe tool",
   "main": "build/scheduler.js",
-  "module": "src/scheduler.js",
+  "module": "build/scheduler.js",
+  "browser": "build/scheduler.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "lint": "eslint src",
-    "lint:fix": "eslint --fix src",
     "start": "npm run dev",
     "dev": "NODE_ENV=development webpack-dev-server --open",
-    "build": "NODE_ENV=production webpack --progress --colors"
+    "build": "rollup -c"
   },
   "repository": {
     "type": "git",
@@ -31,6 +29,10 @@
     "babel-loader": "^7.1.2",
     "babel-preset-env": "^1.6.0",
     "webpack": "^3.6.0",
-    "webpack-dev-server": "^2.8.2"
+    "webpack-dev-server": "^2.8.2",
+    "rollup": "^2.39.0",
+    "@rollup/plugin-commonjs": "^11.0.1",
+    "@rollup/plugin-node-resolve": "^7.0.0",
+    "rollup-plugin-terser": "^7.0.2"
   }
 }
