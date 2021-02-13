@@ -30,8 +30,6 @@ let idTable = 0;
  */
 function addEF(mFunc, mArgs) {
   const id = ++idTable;
-
-  console.log("add task", id);
   enterframeTasks[id] = { func: mFunc, args: mArgs };
   return id;
 }
@@ -174,17 +172,9 @@ function process() {
   while (deferTasks.length > 0) {
     task = deferTasks.shift();
     current = performance.now();
-    console.log(
-      "Defer :",
-      current,
-      currentTime,
-      task.args.name,
-      task.args.target
-    );
     if (current - currentTime < interval) {
       task.func(task.args);
     } else {
-      console.log("not enough time, push to next frame", task.args.name);
       deferTasks.unshift(task);
       break;
     }
