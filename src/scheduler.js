@@ -121,8 +121,7 @@ function getElapsedTime() {
  * @param {object} mSource the source of animation frame, e.g. window or XR
  */
 function setRequestAnimationFrameSource(mSource) {
-  console.log('setRequestAnimationFrameSource', setRequestAnimationFrameSource, requestAnimationFrameId)
-  if(requestAnimationFrameId > -1) {
+  if (requestAnimationFrameId > -1) {
     window.cancelAnimationFrame(requestAnimationFrameId);
   }
   afSource = mSource;
