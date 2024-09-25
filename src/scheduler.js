@@ -14,7 +14,6 @@ let prevTime = startTime;
 const enterframeTasks = [];
 const delayTasks = [];
 const deferTasks = [];
-const usurpTasks = [];
 let highTasks = [];
 let nextTasks = [];
 
@@ -84,17 +83,6 @@ function next(mFunc, mArgs) {
  */
 function defer(mFunc, mArgs) {
   deferTasks.push({ func: mFunc, args: mArgs });
-}
-
-/**
- * Add an usurp task, that only execute when there's enough time left in the frame, otherwise abandoned.
- *
- * @param {function} mFunc the function to be called
- * @param {object} mArgs the arguments for the function
- * @returns {number} the id of the task
- */
-function usurp(mFunc, mArgs) {
-  usurpTasks.push({ func: mFunc, args: mArgs });
 }
 
 /**
@@ -185,17 +173,6 @@ function process() {
       deferTasks.unshift(task);
       break;
     }
-  }
-
-  // usurp tasks
-  currentTime = performance.now();
-  while (usurpTasks.length > 0) {
-    task = usurpTasks.shift();
-    current = performance.now();
-    if (current - currentTime < interval) {
-      task.func(task.args);
-    }
-    // else do nothing, tasks abandoned
   }
 
   // save time
