@@ -1,24 +1,15 @@
-// animation frame source
-let afSource = window;
-
-// expected frame rate, for defer / usurp tasks
+let enterframeFunc = window.requestAnimationFrame;
 let frameRate = 60;
-
-// time
-let startTime = performance.now();
+let timeScale = 1;
+let currentTime = 0;
 let deltaTime = 0;
-let elapsedTime = 0;
-let prevTime = startTime;
+let prevTime = 0;
 
 // tasks
-const enterframeTasks = [];
+const enterframeTasks = new Map();
 const delayTasks = [];
-const deferTasks = [];
 let highTasks = [];
 let nextTasks = [];
-
-// animation frame id
-let requestAnimationFrameId = -1;
 
 // indexing
 let idTable = 0;
@@ -29,10 +20,15 @@ let idTable = 0;
  * @param {function} mFunc the function to be called in enterframe
  * @param {object} mArgs the arguments for the function
  * @returns {number} the id of the task
+ * @throws {Error} Throws an error if the provided mFunc is not a function.
  */
 function addEF(mFunc, mArgs) {
+  if (typeof mFunc !== "function") {
+    throw new Error("Invalid function provided for enterframe task.");
+  }
+
   const id = ++idTable;
-  enterframeTasks[id] = { func: mFunc, args: mArgs };
+  enterframeTasks.set(id, { func: mFunc, args: mArgs });
   return id;
 }
 
@@ -43,9 +39,8 @@ function addEF(mFunc, mArgs) {
  * @returns {number} return -1
  */
 function removeEF(mIndex) {
-  if (enterframeTasks[mIndex] !== undefined) {
-    enterframeTasks[mIndex] = null;
-  }
+  enterframeTasks.delete(mIndex);
+
   return -1;
 }
 
@@ -53,90 +48,99 @@ function removeEF(mIndex) {
  * Add a delayed task
  *
  * @param {function} mFunc the function to be called
- * @param {object} mArgs the arguments for the function
  * @param {number} mDelay the delay time for the task
- * @returns {number} the id of the task
+ * @param {object} mArgs the arguments for the function
+ * @param {bool} mRepeat if the task should repeat
+ * @throws {Error} Throws an error if the provided mFunc is not a function.
  */
-function delay(mFunc, mArgs, mDelay) {
-  const time = performance.now();
-  delayTasks.push({ func: mFunc, args: mArgs, delay: mDelay, time });
+function delay(mFunc, mDelay, mArgs, mRepeat = false) {
+  if (typeof mFunc !== "function") {
+    throw new Error("Invalid function provided for delayed task.");
+  }
+
+  delayTasks.push({
+    func: mFunc,
+    args: mArgs,
+    delay: mDelay,
+    time: currentTime,
+    repeat: mRepeat,
+  });
 }
 
 /**
- * Add a task for next frame
+ * Schedules a function to be executed in the next frame.
  *
- * @param {function} mFunc the function to be called
- * @param {object} mArgs the arguments for the function
- * @returns {number} the id of the task
+ * @param {Function} mFunc - The function to be executed.
+ * @param {Array} mArgs - The arguments to be passed to the function.
+ * @throws {Error} Throws an error if the provided mFunc is not a function.
  */
 function next(mFunc, mArgs) {
+  if (typeof mFunc !== "function") {
+    throw new Error("Invalid function provided for next frame task.");
+  }
   nextTasks.push({ func: mFunc, args: mArgs });
 }
 
 /**
- * Add a deffered task that only execute when there's enough time left in the frame.
- * Otherwise try again in the next frame ( Green threading )
+ * Sets the frame rate and defines the enterframe function.
  *
- * @param {function} mFunc the function to be called
- * @param {object} mArgs the arguments for the function
- * @returns {number} the id of the task
- */
-function defer(mFunc, mArgs) {
-  deferTasks.push({ func: mFunc, args: mArgs });
-}
-
-/**
- * Get the delta time from last frame
- *
- * @returns {number} the elapsed time from the last frame
- */
-function getDeltaTime() {
-  return deltaTime;
-}
-
-/**
- * Get the elapsed time from the app starts
- *
- * @returns {number} the elapsed tiem of the app ( in sec )
- */
-function getElapsedTime() {
-  return elapsedTime;
-}
-
-/**
- * Set the animation source of the scheduler
- *
- * @param {object} mSource the source of animation frame, e.g. window or XR
- */
-function setRequestAnimationFrameSource(mSource) {
-  if (requestAnimationFrameId > -1) {
-    window.cancelAnimationFrame(requestAnimationFrameId);
-  }
-  afSource = mSource;
-  loop();
-}
-
-/**
- * Set the (expected) frame rate for defer / usurp tasks
- *
- * @param {number} mFrameRate the frame rate
+ * @param {number} mFrameRate - The desired frame rate in frames per second.
  */
 function setFrameRate(mFrameRate) {
   frameRate = mFrameRate;
+
+  enterframeFunc = (mFunc) => {
+    requestAnimationFrame((timestamp) => {
+      const desiredTime = 1000 / frameRate;
+      const timeDiff = timestamp - prevTime;
+      if (timeDiff >= desiredTime) {
+        mFunc(timestamp);
+      } else {
+        setTimeout(() => enterframeFunc(mFunc), desiredTime - timeDiff);
+      }
+    });
+  };
 }
 
 /**
- * Process all scheduled tasks
+ * Sets the time scale for the scheduler.
+ *
+ * @param {number} mTimeScale - The new time scale value to be set.
+ */
+function setTimeScale(mTimeScale) {
+  timeScale = mTimeScale;
+
+  setFrameRate(frameRate * timeScale);
+}
+
+/**
+ * Retrieves the current time scale.
+ *
+ * @returns {number} The current time scale.
+ */
+function getTimeScale() {
+  return timeScale;
+}
+
+/**
+ * Sets the function to be called on each enter frame event.
+ *
+ * @param {Function} mFunc - The function to be executed on each enter frame.
+ */
+function setEnterframeFunc(mFunc) {
+  enterframeFunc = mFunc;
+}
+
+/**
+ * Processes and executes tasks from the enterframeTasks array.
+ * Iterates through each task in the enterframeTasks array and calls the task's function with its arguments if the task is not null or undefined.
  */
 function process() {
   let i = 0;
   let task;
-  let interval = 1000 / frameRate;
-  let current = 0;
 
   // enterframe tasks
-  for (i = 0; i < enterframeTasks.length; i++) {
-    task = enterframeTasks[i];
+  for (let [id, task] of enterframeTasks) {
     if (task !== null && task !== undefined) {
       task.func(task.args);
     }
@@ -148,62 +152,74 @@ function process() {
     task.func(task.args);
   }
 
-  // get current time
-  let currentTime = performance.now();
-  elapsedTime = (currentTime - startTime) / 1000;
-  deltaTime = currentTime - prevTime;
-
   // delay tasks
   for (i = 0; i < delayTasks.length; i++) {
     task = delayTasks[i];
-    if (currentTime - task.time > task.delay) {
+    // console.log(currentTime, task.time, task.delay);
+    if (currentTime - task.time > task.delay / timeScale) {
       task.func(task.args);
-      delayTasks.splice(i, 1);
+      if (task.repeat) {
+        task.time = currentTime; // Reschedule
+      } else {
+        delayTasks.splice(i, 1); // Remove non-repeating task
+      }
     }
   }
+}
 
-  // defer tasks
-  currentTime = performance.now();
-  while (deferTasks.length > 0) {
-    task = deferTasks.shift();
-    current = performance.now();
-    if (current - currentTime < interval) {
-      task.func(task.args);
-    } else {
-      deferTasks.unshift(task);
-      break;
-    }
-  }
+/**
+ * Retrieves the current time.
+ *
+ * @returns {Date} The current time.
+ */
+function getTime() {
+  return currentTime;
+}
 
-  // save time
+/**
+ * Retrieves the delta time.
+ *
+ * @returns {number} The delta time.
+ */
+function getDeltaTime() {
+  return deltaTime;
+}
+
+/**
+ * Main loop function that processes and updates the current time.
+ *
+ * @param {number} [mTimestamp] - Optional timestamp to set the current time.
+ */
+function loop(mTimestamp) {
+  process();
   prevTime = currentTime;
+
+  if (mTimestamp === undefined) {
+    currentTime += (1000 / frameRate) * timeScale;
+  } else {
+    currentTime = mTimestamp;
+  }
+
+  deltaTime = currentTime - prevTime;
 
   // clear tasks
   highTasks = highTasks.concat(nextTasks);
   nextTasks = [];
-}
-
-/**
- * Looping
- */
-function loop() {
-  process();
-  requestAnimationFrameId = afSource.requestAnimationFrame(loop);
+  enterframeFunc(loop);
 }
 
 // start the engine
-loop();
+currentTime = performance.now();
+loop(currentTime);
 
-// exports
 export default {
   addEF,
   removeEF,
   delay,
   next,
-  defer,
-  usurp,
-  setRequestAnimationFrameSource,
-  setFrameRate,
-  getElapsedTime,
+  getTime,
   getDeltaTime,
+  setFrameRate,
+  setTimeScale,
+  getTimeScale,
 };
