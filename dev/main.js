@@ -1,6 +1,6 @@
 // main.js
-// import Scheduler from "../src/scheduler";
-import Scheduler from "../build/scheduler";
+import Scheduler from "../src/scheduler";
+// import Scheduler from "../build/scheduler";
 
 const maxFrame = 60;
 let count = 0;

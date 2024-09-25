@@ -1,6 +1,6 @@
 {
   "name": "scheduling",
-  "version": "1.4.0",
+  "version": "1.4.1",
   "description": "A enterframe tool",
   "main": "build/scheduler.js",
   "module": "build/scheduler.js",

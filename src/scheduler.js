@@ -8,6 +8,7 @@ let prevTime = 0;
 // tasks
 const enterframeTasks = new Map();
 const delayTasks = [];
+const deferTasks = [];
 let highTasks = [];
 let nextTasks = [];
 
@@ -79,6 +80,21 @@ function next(mFunc, mArgs) {
     throw new Error("Invalid function provided for next frame task.");
   }
   nextTasks.push({ func: mFunc, args: mArgs });
+}
+
+/**
+ * Add a deffered task that only execute when there's enough time left in the frame.
+ * Otherwise try again in the next frame ( Green threading )
+ *
+ * @param {function} mFunc the function to be called
+ * @param {object} mArgs the arguments for the function
+ * @throws {Error} Throws an error if the provided mFunc is not a function.
+ */
+function defer(mFunc, mArgs) {
+  if (typeof mFunc !== "function") {
+    throw new Error("Invalid function provided for deferred task.");
+  }
+  deferTasks.push({ func: mFunc, args: mArgs });
 }
 
 /**
@@ -165,6 +181,18 @@ function process() {
       }
     }
   }
+
+  // defer tasks
+  let time = performance.now();
+  while (deferTasks.length > 0) {
+    task = deferTasks.shift();
+    if (performance.now() - time < (1000 / frameRate) * timeScale) {
+      task.func(task.args);
+    } else {
+      deferTasks.unshift(task);
+      break;
+    }
+  }
 }
 
 /**
@@ -217,9 +245,11 @@ export default {
   removeEF,
   delay,
   next,
+  defer,
   getTime,
   getDeltaTime,
   setFrameRate,
   setTimeScale,
   getTimeScale,
+  setEnterframeFunc,
 };
